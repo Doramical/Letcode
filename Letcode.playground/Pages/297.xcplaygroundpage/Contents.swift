@@ -12,12 +12,12 @@ import Foundation
 
 "[1,2,3,null,null,4,5]"
  
-    1
-     \
-      2
-     /
-    3
- 
+        1
+       / \
+      2   3
+     /     \
+    4       4
+     
 序列化为 "[1, null, 2, 3]"
 
        5
@@ -73,7 +73,9 @@ class Codec {
             
             let letfNode = currentNode?.left
             let rightNode = currentNode?.right
+            var addEmptyLeftNode = false
             if letfNode == nil && queue.compactMap({ $0 }).count > 0 {
+                addEmptyLeftNode.toggle()
                 queue.append(nil)
             }
             if letfNode != nil {
@@ -83,7 +85,7 @@ class Codec {
                 queue.append(nil)
             }
             if rightNode != nil {
-                if letfNode == nil {
+                if letfNode == nil && !addEmptyLeftNode {
                     queue.append(nil)
                 }
                 queue.append(rightNode)
@@ -96,28 +98,68 @@ class Codec {
         if data.isEmpty {
             return nil
         }
-        var nodeArr = data.components(separatedBy: " ")
-        if nodeArr.count <= 0 {
+        var nodeDataArray = data.components(separatedBy: " ")
+        if nodeDataArray.count <= 0 {
             return nil
         }
-        let firstNode = nodeArr.removeFirst()
-        guard firstNode != "*", let val = Int(firstNode) else {
+        let firstNodeData = nodeDataArray.removeFirst()
+        guard firstNodeData != "*", let firstVal = Int(firstNodeData) else {
             return nil
         }
-        let resultNode = TreeNode(val)
-        var currentNode: TreeNode?
-        currentNode = TreeNode(val)
-        while nodeArr.count > 0 {
-            let node = nodeArr.removeFirst()
-            guard node != "*", let val = Int(node) else {
-                resultNode.left = nil
-                currentNode = nil
-                continue
+        
+        let rootNode = TreeNode(firstVal)
+        var queue = [TreeNode?]()
+        queue.append(rootNode)
+        
+        var isLeft = true
+        
+        while nodeDataArray.count > 0 && queue.count > 0 {
+            
+            let parentNode = queue.removeFirst()
+            
+            // 左结点处理
+            let nodeData = nodeDataArray.removeFirst()
+            if nodeData != "*", let nodeVal = Int(nodeData) {
+                let node = TreeNode(nodeVal)
+                if isLeft {
+                    parentNode?.left = node
+                } else {
+                    parentNode?.right = node
+                }
+                isLeft.toggle()
+                queue.append(node)
+            } else {
+                if isLeft {
+                    parentNode?.left = nil
+                } else {
+                    parentNode?.right = nil
+                }
+                isLeft.toggle()
             }
-            resultNode.left = TreeNode(val)
-            currentNode = TreeNode(val)
+            
+            // 检查是否还有下个
+            if nodeDataArray.count > 0 {
+                let nextNodeData = nodeDataArray.removeFirst()
+                if nextNodeData != "*", let nextVal = Int(nextNodeData) {
+                    let nextNode = TreeNode(nextVal)
+                    if isLeft {
+                        parentNode?.left = nextNode
+                    } else {
+                        parentNode?.right = nextNode
+                    }
+                    isLeft.toggle()
+                    queue.append(nextNode)
+                } else {
+                    if isLeft {
+                        parentNode?.left = nil
+                    } else {
+                        parentNode?.right = nil
+                    }
+                    isLeft.toggle()
+                }
+            }
         }
-        return resultNode
+        return rootNode
     }
 }
 
@@ -126,8 +168,8 @@ var codec = Codec()
 let exampleNode1 = TreeNode(1)
 exampleNode1.left = TreeNode(2)
 exampleNode1.right = TreeNode(3)
-exampleNode1.right?.left = TreeNode(4)
-exampleNode1.right?.right = TreeNode(5)
+exampleNode1.left?.left = TreeNode(4)
+exampleNode1.right?.right = TreeNode(4)
 
 let exampleNode2 = TreeNode(1)
 exampleNode2.right = TreeNode(2)
@@ -144,3 +186,6 @@ exampleNode3.right?.left?.left = TreeNode(9)
 codec.serialize(exampleNode1)
 codec.serialize(exampleNode2)
 codec.serialize(exampleNode3)
+let node = codec.deserialize(codec.serialize(exampleNode1))
+node?.left
+node?.right
