@@ -61,27 +61,35 @@ class Codec {
         var queue = [TreeNode?]()
         queue.append(root)
         var currentNode: TreeNode?
-        while queue.count > 0 {
-            currentNode = queue.removeFirst()
+        // 队列中非空的节点
+        var nodeCount = 1
+        // 队列中游标索引
+        var queueIndex = 0
+        
+        while queueIndex < queue.count {
+            currentNode = queue[queueIndex]
+            queueIndex += 1
             guard let node = currentNode else {
-                if queue.compactMap({ $0 }).count > 0 {
+                if nodeCount > 0 {
                     result.append("*")
                 }
                 continue
             }
+            
             result.append(String(node.val))
             
             let letfNode = currentNode?.left
             let rightNode = currentNode?.right
             var addEmptyLeftNode = false
-            if letfNode == nil && queue.compactMap({ $0 }).count > 0 {
+            if letfNode == nil && nodeCount > 0 {
                 addEmptyLeftNode.toggle()
                 queue.append(nil)
             }
             if letfNode != nil {
                 queue.append(letfNode)
+                nodeCount += 1
             }
-            if rightNode == nil && queue.compactMap({ $0 }).count > 0 {
+            if rightNode == nil && nodeCount > 0 {
                 queue.append(nil)
             }
             if rightNode != nil {
@@ -89,7 +97,9 @@ class Codec {
                     queue.append(nil)
                 }
                 queue.append(rightNode)
+                nodeCount += 1
             }
+            nodeCount -= 1
         }
         return result.joined(separator: " ")
     }
@@ -113,12 +123,17 @@ class Codec {
         
         var isLeft = true
         
-        while nodeDataArray.count > 0 && queue.count > 0 {
+        var nodeIndex = 0
+        var queueIndex = 0
+        
+        while nodeIndex < nodeDataArray.count && queueIndex < queue.count {
             
-            let parentNode = queue.removeFirst()
+            let parentNode = queue[queueIndex]
+            queueIndex += 1
             
             // 左结点处理
-            let nodeData = nodeDataArray.removeFirst()
+            let nodeData = nodeDataArray[nodeIndex]
+            nodeIndex += 1
             if nodeData != "*", let nodeVal = Int(nodeData) {
                 let node = TreeNode(nodeVal)
                 if isLeft {
@@ -138,8 +153,9 @@ class Codec {
             }
             
             // 检查是否还有下个
-            if nodeDataArray.count > 0 {
-                let nextNodeData = nodeDataArray.removeFirst()
+            if nodeIndex < nodeDataArray.count {
+                let nextNodeData = nodeDataArray[nodeIndex]
+                nodeIndex += 1
                 if nextNodeData != "*", let nextVal = Int(nextNodeData) {
                     let nextNode = TreeNode(nextVal)
                     if isLeft {
