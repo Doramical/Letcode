@@ -46,12 +46,6 @@ class TreeNode {
     }
 }
 
-extension TreeNode {
-    var hasChild: Bool {
-        return left != nil && right != nil
-    }
-}
-
 class Codec {
     func serialize(_ root: TreeNode?) -> String {
         guard let root = root else {
