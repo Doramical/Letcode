@@ -57,11 +57,10 @@ class Solution {
             a = i
             if a * a == sumOfa2b2 {
                 break
-            } else {
-                b = sumOfab - i
-                if a * a + b * b == sumOfa2b2 {
-                    break
-                }
+            }
+            b = sumOfab - i
+            if a * a + b * b == sumOfa2b2 {
+                break
             }
         }
         
