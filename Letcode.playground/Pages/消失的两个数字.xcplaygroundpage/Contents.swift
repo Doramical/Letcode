@@ -2,6 +2,7 @@
 
 import Foundation
 
+
 var str = "Hello, playground"
 
 //: [Next](@next)
@@ -30,6 +31,49 @@ var str = "Hello, playground"
 
 class Solution {
     func missingTwo(_ nums: [Int]) -> [Int] {
-
+        guard nums.count > 0 else {
+            return [1, 2]
+        }
+        
+        let n = nums.count + 2
+        
+        let sumOfN = n * (n + 1) / 2
+        var sumOfArray = 0
+        
+        let sumOfSqrtOfN: CLong = n * (n + 1) * (2 * n + 1) / 6
+        var sumOfSqrtOfArray: CLong = 0
+        
+        for num in nums {
+            sumOfArray += num
+            sumOfSqrtOfArray += (num * num)
+        }
+        
+        var a = 0, b = 0
+        let sumOfab = sumOfN - sumOfArray
+        let sumOfa2b2 = sumOfSqrtOfN - sumOfSqrtOfArray
+        
+        let value = floor(sqrt(Double(sumOfa2b2)))
+        for i in 1...Int(value) {
+            a = i
+            if a * a == sumOfa2b2 {
+                break
+            } else {
+                b = sumOfab - i
+                if a * a + b * b == sumOfa2b2 {
+                    break
+                }
+            }
+        }
+        
+        if a == 0 && b == 0 {
+            a = n - 1
+            b = n
+        } else if a != 0 && b == 0 {
+            b = n
+        }
+        return [a, b]
     }
+    
 }
+
+Solution().missingTwo([1, 2, 3, 6])
