@@ -46,7 +46,7 @@ class Solution {
         for num in nums {
             sumOfArray += num
             sumOfSqrtOfArray += (num * num)
-        }
+        0}
         
         var a = 0, b = 0
         let sumOfab = sumOfN - sumOfArray
