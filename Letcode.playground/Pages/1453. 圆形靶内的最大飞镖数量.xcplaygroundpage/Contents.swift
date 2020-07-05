@@ -51,111 +51,100 @@ var str = "Hello, playground"
  著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
  */
 
-typealias Point = (x: Int, y: Int)
+typealias Point = (x: Double, y: Double)
 
 class Solution {
     func numPoints(_ points: [[Int]], _ r: Int) -> Int {
-        /**
-         想要更多的点落在靶内，则需要以两个点刚好在圆上，穷举法
-         */
         
-        guard !points.isEmpty else {
-            return 0
-        }
-        
-        guard points.count > 1 else {
+        let count = points.count
+        guard count > 1 else {
             return 1
         }
         
         // 是否包含在⭕️内
-        let containPoint = { (center: Point, point: Point) -> Bool in
-            (pow(Decimal(abs(center.x - point.x)), 2) +
-                pow(Decimal(abs(center.y - point.y)), 2)) <= pow(Decimal(r), 2)
+        let containPoint = { (center: Point, point: Point) -> ComparisonResult in
+            let distance = (center.x - point.x) * (center.x - point.x) + (center.y - point.y) * (center.y - point.y)
+            let value = Double(r * r)
+            if distance < value {
+                return .orderedAscending
+            } else if distance == value {
+                return .orderedSame
+            } else {
+                return .orderedDescending
+            }
         }
         
-        // 三点定⭕️
-        let hasCircleCenter = { (a: Point, b: Point, c: Point) -> Point? in
-            var minX = min((a.x + b.x) / 2, (a.x + c.x) / 2, (b.x + c.x) / 2)
-            let maxX = max((a.x + b.x) / 2, (a.x + c.x) / 2, (b.x + c.x) / 2)
-            var minY = min((a.y + b.y) / 2, (a.y + c.y) / 2, (b.y + c.y) / 2)
-            let maxY = max((a.y + b.y) / 2, (a.y + c.y) / 2, (b.y + c.y) / 2)
+        // 两点定⭕️
+        let caculateCircleCenter = { (a: Point, b: Point) -> [Point] in
             
-            var result: Point?
-            while minX < maxX {
-                guard result == nil else {
-                    break
-                }
-                let temp = minY
-                while minY < maxY {
-                    if (pow(Decimal(abs(a.x - minX)), 2) +
-                        pow(Decimal(abs(a.y - minY)), 2)) <= pow(Decimal(r), 2) &&
-                        (pow(Decimal(abs(b.x - minX)), 2) +
-                        pow(Decimal(abs(b.y - minY)), 2)) <= pow(Decimal(r), 2) {
-                        result = (x: minX, y: minY)
-                        break
+            // a、b的中心点
+            let middle = (x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            // a、b的距离
+            let distanceOfa2b = sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+            if distanceOfa2b / 2 > Double(r) {
+                return []
+            }
+            if distanceOfa2b == Double(r) {
+                return [middle]
+            }
+            
+            // 中心点在圆点的距离，根据勾股定算出
+            let distanceOfm2c = sqrt(Double(r * r) - (distanceOfa2b / 2) * (distanceOfa2b / 2))
+            // 根据相似三角形求出中心点 Xc - Xm，Yc - Ym 的距离
+            let Xm = middle.x
+            let Ym = middle.y
+            let v1 = b.x - a.x
+            let v2 = a.y - b.y
+            let Xc1 = Xm + v2 * (distanceOfm2c / distanceOfa2b)
+            let Yc1 = Ym + v1 * (distanceOfm2c / distanceOfa2b)
+            let Xc2 = Xm - v2 * (distanceOfm2c / distanceOfa2b)
+            let Yc2 = Ym - v1 * (distanceOfm2c / distanceOfa2b)
+            
+            return [(x: Xc1, y: Yc1), (x: Xc2, y: Yc2)]
+        }
+        var maxNum = 1
+        var dic = [String: Set<Int>]()
+        
+        for i in 0..<count {
+            let a = points[i].point
+            for j in (i + 1)..<count {
+                let b = points[j].point
+                for center in caculateCircleCenter(a, b) {
+                    let key = "(x: \(center.x), y:\(center.y))"
+                    var values = dic[key] ?? []
+                    
+                    var containPointNum = 0
+                    for k in 0..<count where !values.contains(k) {
+                        if k == i || k == j {
+                            containPointNum += 1
+                            continue
+                        }
+                        let c = points[k].point
+                        let result = containPoint(center, c)
+                        if result == .orderedAscending {
+                            containPointNum += 1
+                        } else if result == .orderedSame {
+                            containPointNum += 1
+                            // 记录刚好在圆周上的点，下次不生成该圆
+                            values.insert(i)
+                            values.insert(j)
+                            values.insert(k)
+                            dic[key] = values
+                        }
                     }
-                    minY += 1
-                }
-                minX += 1
-                minY = temp
-            }
-            return result
-        }
-        
-        guard points.count > 2 else {
-            let center = hasCircleCenter(points[0].point, points[1].point, points[1].point)
-            return (center != nil) ? 2 : 1
-        }
-        
-        var firstIndex = 0
-        var secondIndex = 1
-        var thirdIndex = 2
-        
-        if points.count == 3 {
-            thirdIndex = 1
-        }
-        
-        var maxPoint = 0
-        while firstIndex < points.count  {
-            
-            if firstIndex == secondIndex || firstIndex == thirdIndex {
-                firstIndex += 1
-                continue
-            }
-            let _center = hasCircleCenter(points[firstIndex].point,
-                                         points[secondIndex].point,
-                                         points[thirdIndex].point)
-            guard let center = _center else {
-                firstIndex += 1
-                continue
-            }
-            maxPoint = 3
-            if secondIndex == thirdIndex {
-                maxPoint -= 1
-            }
-
-            // 确定圆点之后开始枚举有多少个点在⭕️内
-            for (index, val) in points.enumerated() {
-                guard ![firstIndex, secondIndex, thirdIndex].contains(index) else {
-                    continue
-                }
-                if containPoint(center, val.point) {
-                    maxPoint += 1
+                    maxNum = max(containPointNum, maxNum)
                 }
             }
-            
-            firstIndex += 1
         }
-        return maxPoint
+        return maxNum
     }
 }
 
 extension Array where Element == Int {
     var point: Point {
-        return (self[0], self[1])
+        return (Double(self[0]), Double(self[1]))
     }
 }
 
 
-let result = Solution().numPoints([[-2,0],[2,0],[0,1],[-3, 0],[0,2],[0,-2]], 2)
-print(result)
+let result = Solution().numPoints([[-2,0],[2,0],[0,2],[0,-2]], 2)
